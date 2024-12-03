@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.choiseojin.backend.product.repository.ProductMapper">
+
+    <select id="selectLowestCategoryByProduct" resultType="Map">
+        select price      as "가격"
+             , cate_nm    as "카테고리"
+             , brand_nm   as "브랜드"
+          from ( select distinct min(a.price) price
+                      , a.product_cd
+                      , a.product_nm
+                      , a.cate_cd
+                      , a.brand_cd
+                      , b.cate_nm
+                      , c.brand_nm
+                      , rank() over(partition by a.cate_cd order by min(a.price), a.brand_cd desc) rnk
+                   from tb_product a inner join tb_category b on a.cate_cd = b.cate_cd
+                                     inner join tb_brand c on a.brand_cd = c.brand_cd
+               group by a.cate_cd
+                      , a.brand_cd
+               order by a.cate_cd
+            ) aa
+       where aa.rnk = 1
+       order by aa.cate_cd
+
+    </select>
+    <select id="selectLowestBrandByProduct" resultType="Map">
+        select sum_price        as "총액"
+             , cate_nm          as "카테고리"
+             , brand_nm         as "브랜드"
+             , price            as "가격"
+          from ( select sum_price
+                      , product_cd
+                      , product_nm
+                      , price
+                      , cate_cd
+                      , brand_cd
+                      , cate_nm
+                      , brand_nm
+                      , dense_rank() over(order by sum_price) rnk
+                   from ( select distinct sum(a.price) over(partition by a.brand_cd) sum_price
+                               , a.product_cd
+                               , a.product_nm
+                               , a.cate_cd
+                               , a.price
+                               , a.brand_cd
+                               , b.cate_nm
+                               , c.brand_nm
+                            from tb_product a inner join tb_category b on a.cate_cd = b.cate_cd
+                                              inner join tb_brand c on a.brand_cd = c.brand_cd
+                           group by a.cate_cd
+                                  , a.brand_cd
+                        ) aa
+                ) aaa
+        where rnk = 1
+    </select>
+    <select id="selectBrandMinMaxByCate" parameterType="String" resultType="Map">
+        select case when min_rank = 1 then 'MIN'
+                    when max_rank = 1 then 'MAX'
+               end as type
+               , price        as "가격"
+               , brand_nm     as "브랜드"
+       from ( select a.product_cd
+                   , a.product_nm
+                   , a.price
+                   , a.brand_cd
+                   , a.brand_nm
+                   , dense_rank() over(order by price asc) as min_rank
+                   , dense_rank() over(order by price desc) as max_rank
+                from tb_product a inner join tb_category c on p.cate_cd = c.cate_cd
+                                  inner join tb_brand b on p.brand_cd = b.brand_cd
+               where c.cate_nm = #{cateNm}
+             )
+     where min_rank = 1 or max_rank = 1
+    </select>
+    <select id="selectProductOne" parameterType="String" resultType="productDto">
+        select product_cd
+            , product_nm
+            , price
+            , brand_cd
+            , ins_dtm as insDtm
+            , upd_dtm as updDtm
+          from tb_product
+         where product_cd = #{product_cd}
+    </select>
+
+    <insert id="saveProduct" parameterType="ProductDto">
+        insert into tb_product
+        (cate_cd
+        , brand_cd
+        , product_cd
+        , product_nm
+        , price
+        , ins_dtm
+        , upd_dtm)
+        values
+        ( ( select cate_cd
+            from tb_category
+            where cate_nm = #{cateNm})
+        ,( select brand_cd
+             from tb_brand
+            where brand_nm = #{brandNm}
+           )
+        , #{productCd}
+        , #{productNm}
+        , #{price}
+        , NOW()
+        , NOW()
+        )
+    </insert>
+    <update id="updateProduct" parameterType="productDto">
+        update tb_product
+           set upd_dtm = NOW()
+        <if test="price != null and price == '' " >
+             , price = #{price}
+        </if>
+        <if test="cateNm != null and cateNm == '' " >
+            , cate_nm = #{cateNm}
+            , cate_cd = ( select cate_cd
+                            from tb_category
+                            where cate_nm = #{cateNm})
+        </if>
+          where product_cd = #{productCd}
+    </update>
+
+    <delete id="deleteProduct" parameterType="String" >
+        delete tb_product
+        where product_cd = #{productCd}
+    </delete>
+</mapper>

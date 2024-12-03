@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <settings>
+
+        <setting name="autoMappingBehavior" value="PARTIAL"/>                            <!-- mybatis가 컬럼을 필드/프로퍼티에 자동으로 매핑할지와 방법에 대한 명시(PARTIAL은 중첩되지 않은 것들을 매핑 -->
+        <setting name="callSettersOnNulls" value="false"/>                                <!-- 가져온 값이 null일때 setter나 맵의 put 메소드를 호출할지를 명시 (false일경우, null인 field는 제거되어 나타남 : default는 false -->
+    </settings>
+</configuration>

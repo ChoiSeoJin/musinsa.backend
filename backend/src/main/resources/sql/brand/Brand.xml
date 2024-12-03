@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.choiseojin.backend.brand.repository.BrandMapper">
+    <select id="selectBrand" parameterType="String" resultType="brandDto">
+        select *
+          from tb_brand
+          where brand_nm = #{brandNm}
+    </select>
+
+    <insert id="saveBrand" parameterType="brandDto">
+        insert into tb_brand
+        ( brand_cd
+        , brand_nm
+        , ins_dtm
+        , upd_dtm)
+        values
+        ( #{brand_cd}
+        , #{brand_nm}
+        , NOW()
+        , NOW()
+        )
+    </insert>
+    <update id="updateBrand" parameterType="brandDto">
+        update tb_brand
+        set upd_dtm = NOW()
+        <if test="brandNm != null and brandNm == '' " >
+            , brand_nm = #{brandNm}
+        </if>
+        where brand_cd = #{brandCd}
+    </update>
+
+    <delete id="deleteBrand" parameterType="String">
+        delete tb_brand
+        where brand_cd = #{brandCd}
+    </delete>
+    <delete id="deleteProduct" parameterType="String" >
+        delete tb_product
+        where brand_cd = #{brandCd}
+    </delete>
+</mapper>
